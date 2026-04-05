@@ -51,7 +51,7 @@ class Portfolio
         };
         Funds[morningstarCode] = fund;
         Save();
-        Console.WriteLine($"Added fund '{fund.Name}' with ISIN '{fund.ISIN}' and currency '{fund.Currency}' to the portfolio.");
+        Console.WriteLine($"Added fund '{fund.Name}' with ISIN '{fund.ISIN}' and currency '{fund.Currency}' to portfolio '{FilePath}'.");
     }
     
     public void List()
@@ -61,7 +61,7 @@ class Portfolio
             Console.WriteLine($"Fund: {fund.Value.Name}, ISIN: {fund.Value.ISIN}, Currency: {fund.Value.Currency}");
             foreach (var navQuote in fund.Value.NavQuotes)
             {
-                Console.WriteLine($"  Price: {navQuote.Value}, Change: {navQuote.ChangePercent} %, Date: {navQuote.Date}");
+                Console.WriteLine($"  NAV: {navQuote.Value}, Change: {navQuote.ChangePercent} %, Date: {navQuote.Date}");
             }
         }
     }
@@ -105,7 +105,7 @@ class Portfolio
             fund.NavQuotes.Add(new Fund.NavQuote(navValueParsed, changePercentParsed, dateParsed));
         }
         Save();
-        Console.WriteLine("Portfolio update completed.");
+        Console.WriteLine($"Portfolio '{FilePath}' update completed.");
     }
 
     DateOnly ParseDate(string date)
