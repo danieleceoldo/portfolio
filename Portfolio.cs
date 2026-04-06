@@ -1,6 +1,13 @@
 using Microsoft.Playwright;
 using System.Text.Json;
 
+/// <summary>
+/// TODO:
+/// - Add logging to file with log rotation to avoid losing important information in case of crashes and to have a history of operations performed by the application
+/// - Add unit tests to ensure the correctness of the application and to facilitate future refactoring and addition of new features
+/// - Add error handling and retry logic to the Add and Update methods to handle transient issues such as network errors or changes in the website structure that may cause element retrieval to fail
+/// - Add .json file name validation to ensure that the portfolio name provided by the user is valid and does not contain characters that are not allowed in file names, which could cause issues when saving the portfolio data
+/// </summary>
 class Portfolio
 {
     string FilePath { get; }
