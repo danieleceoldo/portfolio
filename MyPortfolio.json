@@ -1,0 +1,158 @@
+{
+  "0P0000VHOM": {
+    "Name": "BlackRock Global Funds - World Technology Fund E2",
+    "ISIN": "LU0147408487",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 81.19,
+        "ChangePercent": -1.24,
+        "Date": "2026-04-02"
+      }
+    ]
+  },
+  "0P0000MWCO": {
+    "Name": "Morgan Stanley Investment Funds - Global Brands Fund C",
+    "ISIN": "LU0176160306",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 67.57,
+        "ChangePercent": 0.49,
+        "Date": "2026-04-02"
+      }
+    ]
+  },
+  "0P0000I3XF": {
+    "Name": "Pictet-Global Megatrend Selection R EUR",
+    "ISIN": "LU0391944815",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 302.61,
+        "ChangePercent": -0.60,
+        "Date": "2026-04-02"
+      }
+    ]
+  },
+  "0P0000VHO7": {
+    "Name": "BlackRock Global Funds - World Healthscience Fund E2",
+    "ISIN": "LU0122380701",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 55.02,
+        "ChangePercent": 0.36,
+        "Date": "2026-04-02"
+      }
+    ]
+  },
+  "0P0000VHMS": {
+    "Name": "BlackRock Global Funds - Sustainable Energy Fund E2",
+    "ISIN": "LU0124386052",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 17.23,
+        "ChangePercent": -0.63,
+        "Date": "2026-04-02"
+      }
+    ]
+  },
+  "0P00001E92": {
+    "Name": "JPMorgan Funds - Global Natural Resources Fund D (acc) - EUR",
+    "ISIN": "LU0208853944",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 19.36,
+        "ChangePercent": 1.52,
+        "Date": "2026-04-02"
+      }
+    ]
+  },
+  "0P0000VHLM": {
+    "Name": "BlackRock Global Funds - India Fund E2",
+    "ISIN": "LU0248273137",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 35.56,
+        "ChangePercent": -0.06,
+        "Date": "2026-04-01"
+      }
+    ]
+  },
+  "0P000019DA": {
+    "Name": "JPMorgan Funds - China Fund A (acc) - USD",
+    "ISIN": "LU0210526637",
+    "Currency": "USD",
+    "NavQuotes": [
+      {
+        "Value": 47.58,
+        "ChangePercent": -1.43,
+        "Date": "2026-04-02"
+      }
+    ]
+  },
+  "0P0000VHO3": {
+    "Name": "BlackRock Global Funds - World Gold Fund E2",
+    "ISIN": "LU0090841262",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 81.65,
+        "ChangePercent": 0.43,
+        "Date": "2026-04-02"
+      }
+    ]
+  },
+  "0P0000VHLD": {
+    "Name": "BlackRock Global Funds - Global High Yield Bond Fund E2",
+    "ISIN": "LU0171285157",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 25.23,
+        "ChangePercent": 0.56,
+        "Date": "2026-04-02"
+      }
+    ]
+  },
+  "0P0001CH1D": {
+    "Name": "DNCA Invest Alpha Bonds A EUR",
+    "ISIN": "LU1694789451",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 129.57,
+        "ChangePercent": 0.37,
+        "Date": "2026-04-01"
+      }
+    ]
+  },
+  "0P00000SJ0": {
+    "Name": "Morgan Stanley Investment Funds - Global Convertible Bond Fund A (USD)",
+    "ISIN": "LU0149084633",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 61.01,
+        "ChangePercent": 0.05,
+        "Date": "2026-04-02"
+      }
+    ]
+  },
+  "0P00017JCK": {
+    "Name": "Fidelity Funds - Flexible Bond Fund A-Acc-EUR",
+    "ISIN": "LU1345485095",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 10.86,
+        "ChangePercent": 0.00,
+        "Date": "2026-04-03"
+      }
+    ]
+  }
+}

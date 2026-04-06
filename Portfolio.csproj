@@ -5,6 +5,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <self-contained>true</self-contained>
+    <singleFile>true</singleFile>
   </PropertyGroup>
 
   <ItemGroup>

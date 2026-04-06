@@ -33,7 +33,7 @@ class Portfolio
         });
         await using var context = await browser.NewContextAsync();
         var page = await context.NewPageAsync();
-        _ = await page.GotoAsync(url: $"https://global.morningstar.com/it/investimenti/fondi/{morningstarCode}/grafico");
+        await LoadPageWithRetries(page, $"https://global.morningstar.com/it/investimenti/fondi/{morningstarCode}/grafico");
 
         var Name = await page.Locator("//span[@itemprop='name']").TextContentAsync() 
             ?? throw new Exception("Could not find Fund name element.");
@@ -79,8 +79,7 @@ class Portfolio
         {
             var morningstarCode = fundEntry.Key;
             var fund = fundEntry.Value;
-            _ = await page.GotoAsync(url: $"https://global.morningstar.com/it/investimenti/fondi/{morningstarCode}/grafico");
-
+            await LoadPageWithRetries(page, $"https://global.morningstar.com/it/investimenti/fondi/{morningstarCode}/grafico");
             var date = await page.GetByText("Data di fine Al").TextContentAsync() 
                 ?? throw new Exception("Could not find NAV quote date element.");
             var dateParsed = ParseDate(date);
@@ -89,7 +88,7 @@ class Portfolio
                 Console.WriteLine($"NAV quote for fund '{fund.Name}' is already up to date. Skipping.");
                 continue;
             }
-            _ = await page.GotoAsync(url: $"https://global.morningstar.com/it/investimenti/fondi/{morningstarCode}/quote");
+            await LoadPageWithRetries(page, $"https://global.morningstar.com/it/investimenti/fondi/{morningstarCode}/quote");
             var navValue = await page.Locator("//p[@class='sal-dp-value']").First.TextContentAsync() 
                 ?? throw new Exception("Could not find NAV quote value element.");
             navValue = navValue.Replace(",", ".").Trim(); // Replace comma with dot for decimal parsing and trim whitespace
@@ -106,6 +105,34 @@ class Portfolio
         }
         Save();
         Console.WriteLine($"Portfolio '{FilePath}' update completed.");
+    }
+
+    async Task LoadPageWithRetries(IPage page, string url, int maxRetries = 3)
+    {
+        int attempt = 0;
+        while (attempt < maxRetries)
+        {
+            Thread.Sleep(generalTimeout); // Wait before each attempt to avoid overwhelming the server with requests in case of transient issues
+            try
+            {
+                var response = await page.GotoAsync(url: url, new() { Timeout = generalTimeout });
+                if (response != null && response.Ok)
+                {
+                    Thread.Sleep(generalTimeout); // Wait for the page to fully load
+                    return; // Page loaded successfully
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to load page. Status: {response?.Status}. Attempt {attempt + 1} of {maxRetries}.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception while loading page: {ex.Message}. Attempt {attempt + 1} of {maxRetries}.");
+            }
+            attempt++;
+        }
+        throw new Exception($"Failed to load page after {maxRetries} attempts. URL: '{url}'");
     }
 
     DateOnly ParseDate(string date)
@@ -166,4 +193,6 @@ class Portfolio
         }
         return DateOnly.FromDateTime(new DateTime(int.Parse(dateSplit[2]), int.Parse(dateSplit[1]), int.Parse(dateSplit[0])));
     }
+
+    readonly int generalTimeout = 60000; // General timeout of 60 seconds for page load and element retrieval to avoid overwhelming the server
 }
