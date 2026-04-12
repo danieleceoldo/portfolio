@@ -17,14 +17,16 @@ class Program
             Console.WriteLine("Wrong number of arguments. Use 'help' for more information.");
             return;
         }
+        
         var portfolio = new Portfolio(args[0]);
+        await portfolio.LoadAsync();
         if (args[1].ToLower() == "add" && args.Length == 3)
         {
-            await portfolio.Add(args[2]);
+            await portfolio.AddAsync(args[2]);
         }
         else if (args[1].ToLower() == "update")
         {
-            await portfolio.Update();
+            await portfolio.UpdateAsync();
         }
         else if (args[1].ToLower() == "list")
         {

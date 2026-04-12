@@ -1,5 +1,7 @@
 using Microsoft.Playwright;
 using System.Text.Json;
+using System.Net.Http.Json;
+using System.Security.Cryptography.X509Certificates;
 
 /// <summary>
 /// TODO:
@@ -16,19 +18,27 @@ class Portfolio
     public Portfolio(string name)
     {
         _ = string.IsNullOrWhiteSpace(name) ? throw new ArgumentException("Portfolio name cannot be null or empty.", nameof(name)) : "";
+        if (name.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
+        {
+            name = name.Substring(0, name.Length - ".json".Length); // Remove .json extension if provided by the user to avoid issues with file naming
+        }
         FilePath = $"{name}.json";
+    }
+
+    public async Task LoadAsync()
+    {
         if (File.Exists(FilePath))
         {
-            Funds = JsonSerializer.Deserialize<Dictionary<string, Fund>>(File.ReadAllText(FilePath)) ?? new Dictionary<string, Fund>();
+            Funds = JsonSerializer.Deserialize<Dictionary<string, Fund>>(await File.ReadAllTextAsync(FilePath)) ?? new Dictionary<string, Fund>();
+            Console.WriteLine($"Loaded portfolio from file '{FilePath}' with {Funds.Count} funds.");
+        }
+        else
+        {
+            Console.WriteLine($"Created new portfolio with name '{FilePath}'.");
         }
     }
 
-    void Save()
-    {
-        File.WriteAllText(FilePath, JsonSerializer.Serialize(Funds, new JsonSerializerOptions { WriteIndented = true }));
-    }   
-    
-    public async Task Add(string morningstarCode)
+    public async Task AddAsync(string morningstarCode)
     {
         _ = string.IsNullOrWhiteSpace(morningstarCode) 
             ? throw new ArgumentException("Morningstar code cannot be null or empty.", nameof(morningstarCode)) : "";
@@ -57,8 +67,9 @@ class Portfolio
             NavQuotes = new List<Fund.NavQuote>()
         };
         Funds[morningstarCode] = fund;
-        Save();
+        await Save();
         Console.WriteLine($"Added fund '{fund.Name}' with ISIN '{fund.ISIN}' and currency '{fund.Currency}' to portfolio '{FilePath}'.");
+        await page.CloseAsync();
     }
     
     public void List()
@@ -73,48 +84,74 @@ class Portfolio
         }
     }
 
-    public async Task Update()
+    public async Task UpdateAsync()
     {
         using var playwright = await Playwright.CreateAsync();
         await using var browser = await playwright.Chromium.LaunchAsync(new() {
-            Headless = true // Set to false to see the browser window
+            Headless = false // Set to false to see the browser window
         });
         await using var context = await browser.NewContextAsync();
         var page = await context.NewPageAsync();
 
-        foreach (var fundEntry in Funds)
+        await page.GotoAsync("https://www.blackrock.com/it/consulenti/products/229355/blackrock-world-technology-e2-eur-fund");
+        System.Threading.Thread.Sleep(generalTimeout); // Wait for the page to fully load to avoid issues with element retrieval due to slow loading times or dynamic content loading
+        await page.GotoAsync("https://global.morningstar.com/it/investimenti/fondi/0P0000VHOM/grafico");
+        System.Threading.Thread.Sleep(generalTimeout); // Wait for the page to fully load to avoid issues with element retrieval due to slow loading times or dynamic content loading
+
+        foreach (var fund in Funds)
         {
-            var morningstarCode = fundEntry.Key;
-            var fund = fundEntry.Value;
-            await LoadPageWithRetries(page, $"https://global.morningstar.com/it/investimenti/fondi/{morningstarCode}/grafico");
-            var date = await page.GetByText("Data di fine Al").TextContentAsync() 
-                ?? throw new Exception("Could not find NAV quote date element.");
-            var dateParsed = ParseDate(date);
-            if (fund.NavQuotes.Count > 0 && fund.NavQuotes[^1].Date == dateParsed)
+            try
             {
-                Console.WriteLine($"NAV quote for fund '{fund.Name}' is already up to date. Skipping.");
-                continue;
+                await UpdateFundNavQuote(page, fund);
             }
-            await LoadPageWithRetries(page, $"https://global.morningstar.com/it/investimenti/fondi/{morningstarCode}/quote");
-            var navValue = await page.Locator("//p[@class='sal-dp-value']").First.TextContentAsync() 
-                ?? throw new Exception("Could not find NAV quote value element.");
-            navValue = navValue.Replace(",", ".").Trim(); // Replace comma with dot for decimal parsing and trim whitespace
-            var changePercent = await page.Locator("//p[@class='sal-dp-value']").Nth(1).TextContentAsync() 
-                ?? throw new Exception("Could not find NAV quote change percentage element.");
-            changePercent = changePercent.Replace(",", ".").Trim().TrimEnd('%'); // Replace comma with dot for decimal parsing and trim whitespace
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating NAV quote for fund '{fund.Value.Name}': {ex.Message}");
+            }
             
-            _ = !decimal.TryParse(navValue, out decimal navValueParsed) 
-                ? throw new Exception($"Failed to parse NAV quote value for fund '{fund.Name}'. Value: '{navValue}'") : "";
-            _ = !decimal.TryParse(changePercent, out decimal changePercentParsed) 
-                ? throw new Exception($"Failed to parse NAV quote change percentage for fund '{fund.Name}'. Change%: '{changePercent}'") : "";
-            Console.WriteLine($"Adding NAV quote for fund '{fund.Name}': Value: {navValueParsed}, Change: {changePercentParsed} %, Date: {dateParsed}");
-            fund.NavQuotes.Add(new Fund.NavQuote(navValueParsed, changePercentParsed, dateParsed));
         }
-        Save();
+        await Save();
         Console.WriteLine($"Portfolio '{FilePath}' update completed.");
+        await page.CloseAsync();
     }
 
-    async Task LoadPageWithRetries(IPage page, string url, int maxRetries = 3)
+    async Task Save()
+    {
+        await File.WriteAllTextAsync(FilePath, JsonSerializer.Serialize(Funds, new JsonSerializerOptions { WriteIndented = true }));
+    }   
+
+    async Task UpdateFundNavQuote(IPage page, KeyValuePair<string, Fund> fund)
+    {
+        await LoadPageWithRetries(page, $"https://global.morningstar.com/it/investimenti/fondi/{fund.Key}/grafico");
+        var date = await page.GetByText("Data di fine Al").TextContentAsync() 
+            ?? throw new Exception("Could not find NAV quote date element.");
+        var dateParsed = ParseDate(date);
+        
+        await LoadPageWithRetries(page, $"https://global.morningstar.com/it/investimenti/fondi/{fund.Key}/quote");
+        var navValue = await page.Locator("//p[@class='sal-dp-value']").First.TextContentAsync() 
+            ?? throw new Exception("Could not find NAV quote value element.");
+        navValue = navValue.Replace(",", ".").Trim(); // Replace comma with dot for decimal parsing and trim whitespace
+        _ = !decimal.TryParse(navValue, out decimal navValueParsed) 
+            ? throw new Exception($"Failed to parse NAV quote value for fund '{fund.Value.Name}'. Value: '{navValue}'") : "";
+        var changePercent = await page.Locator("//p[@class='sal-dp-value']").Nth(1).TextContentAsync() 
+            ?? throw new Exception("Could not find NAV quote change percentage element.");
+        changePercent = changePercent.Replace(",", ".").Trim().TrimEnd('%'); // Replace comma with dot for decimal parsing and trim whitespace
+        _ = !decimal.TryParse(changePercent, out decimal changePercentParsed) 
+            ? throw new Exception($"Failed to parse NAV quote change percentage for fund '{fund.Value.Name}'. Change%: '{changePercent}'") : "";
+
+        if (fund.Value.NavQuotes.Count > 0 && (fund.Value.NavQuotes[^1].Date == dateParsed
+            || fund.Value.NavQuotes[^1].Value == navValueParsed
+            || fund.Value.NavQuotes[^1].ChangePercent == changePercentParsed))
+        {
+            Console.WriteLine($"NAV quote for fund '{fund.Value.Name}' is already up to date. Skipping.");
+            return;
+        }
+
+        Console.WriteLine($"Adding NAV quote for fund '{fund.Value.Name}': Value: {navValueParsed}, Change: {changePercentParsed} %, Date: {dateParsed}");
+        fund.Value.NavQuotes.Add(new Fund.NavQuote(navValueParsed, changePercentParsed, dateParsed));
+    }
+    
+    static async Task LoadPageWithRetries(IPage page, string url, int maxRetries = 3)
     {
         int attempt = 0;
         while (attempt < maxRetries)
@@ -142,7 +179,28 @@ class Portfolio
         throw new Exception($"Failed to load page after {maxRetries} attempts. URL: '{url}'");
     }
 
-    DateOnly ParseDate(string date)
+    static async Task SendMessageToTelegram(string message)
+    {
+        string botToken = Environment.GetEnvironmentVariable("TELEGRAM_BOT_TOKEN") ?? throw new Exception("Environment variable 'TELEGRAM_BOT_TOKEN' is not set.");
+        string chatId = Environment.GetEnvironmentVariable("TELEGRAM_CHAT_ID") ?? throw new Exception("Environment variable 'TELEGRAM_CHAT_ID' is not set.");
+        using var client = new HttpClient();
+        
+        var url = $"https://api.telegram.org/bot{botToken}/sendMessage";
+        var data = new
+        {
+            chat_id = chatId,
+            text = message
+        };
+
+        var response = await client.PostAsJsonAsync(url, data);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            Console.Write($"Failed to send Telegram message. Status: {response.StatusCode}, Response: {errorContent}");
+        }
+    }
+
+    static DateOnly ParseDate(string date)
     {
         date = date.Replace("Data di fine Al", "").Trim();
         string[] dateSplit = date.Split(' ');
@@ -201,5 +259,5 @@ class Portfolio
         return DateOnly.FromDateTime(new DateTime(int.Parse(dateSplit[2]), int.Parse(dateSplit[1]), int.Parse(dateSplit[0])));
     }
 
-    readonly int generalTimeout = 60000; // General timeout of 60 seconds for page load and element retrieval to avoid overwhelming the server
+    readonly static int generalTimeout = 60000; // General timeout of 60 seconds for page load and element retrieval to avoid overwhelming the server
 }
