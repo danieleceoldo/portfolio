@@ -1,0 +1,14 @@
+{
+  "BGF World Gold Fund": {
+    "Url": "https://www.blackrock.com/it/consulenti/products/228239/blackrock-world-gold-e2-eur-fund",
+    "ISIN": "LU0171306680",
+    "Currency": "EUR",
+    "NavQuotes": [
+      {
+        "Value": 86.34,
+        "ChangePercent": 1.79,
+        "Date": "2026-04-17"
+      }
+    ]
+  }
+}
